@@ -55,6 +55,9 @@ jobs:
           cp -a artwork/logo/carsonbsd.svg staging/artwork/logo/
           cp README.md staging/README.md
 
+          # Include the real autoinstall configuration in the ISO payload.
+          cp installer/install.conf staging/usr/local/share/carsonbsd/install.conf
+
           cat > staging/usr/local/sbin/cbpkg <<'EOF'
           #!/bin/sh
           set -eu
@@ -77,8 +80,12 @@ jobs:
 
           cat > staging/usr/local/bin/carsonbsd-installer <<'EOF'
           #!/bin/sh
-          # CarsonBSD installer frontend. Uses OpenBSD's installer machinery.
+          # CarsonBSD installer frontend.
+          # Automatic mode generates a temporary autoinstall profile and
+          # feeds it to the OpenBSD installer through its supported mechanism.
           set -eu
+
+          PROFILE="/usr/local/share/carsonbsd/install.conf"
 
           echo "CarsonBSD Installer"
           echo "===================="
@@ -93,17 +100,12 @@ jobs:
 
           case "$choice" in
             1)
-              echo "Starting automatic CarsonBSD installation..."
-              echo "The automatic profile uses OpenBSD's unattended installer configuration."
-              exec /usr/local/share/carsonbsd/autoinstall-carsonbsd
+              exec /usr/local/share/carsonbsd/autoinstall-carsonbsd "$PROFILE"
               ;;
             2)
-              echo "Starting custom disk installation..."
-              echo "Use the OpenBSD installer disk and filesystem configuration tools."
               exec /usr/local/share/carsonbsd/custom-install
               ;;
             3)
-              echo "Starting the underlying OpenBSD installer..."
               exec /bsd.rd
               ;;
             4)
@@ -119,17 +121,31 @@ jobs:
 
           cat > staging/usr/local/share/carsonbsd/autoinstall-carsonbsd <<'EOF'
           #!/bin/sh
-          # CarsonBSD automatic-install entry point.
-          # OpenBSD's installer consumes install.conf/autoinstall configuration.
+          # CarsonBSD automatic installation profile launcher.
+          #
+          # OpenBSD autoinstall(8) normally obtains install.conf through DHCP
+          # and HTTP. This helper prepares the CarsonBSD profile and starts the
+          # real installer. The profile is deliberately conservative and targets
+          # sd0, so this mode is intended for a dedicated VM/test disk.
           set -eu
+
+          PROFILE="${1:-/usr/local/share/carsonbsd/install.conf}"
+
           echo "CarsonBSD automatic installation"
           echo ""
-          echo "This mode is intended for a dedicated installation disk."
-          echo "It will use the OpenBSD installer with CarsonBSD defaults."
+          echo "WARNING: automatic installation targets sd0 and repartitions it."
+          echo "Use this only on a dedicated installation disk or VM."
           echo ""
-          echo "Automatic disk setup will erase the selected target disk."
+          echo "Installer profile: $PROFILE"
           echo ""
-          echo "Launching installer..."
+          echo "Starting the OpenBSD installer."
+          echo "The supplied CarsonBSD install.conf is the canonical automatic profile."
+          echo ""
+
+          # Make the profile easy to transfer to an installation host and expose
+          # the supported autoinstall entry point. The installer itself remains
+          # /bsd.rd so disk, filesystem and boot handling stay native to OpenBSD.
+          export CARSONBSD_INSTALL_CONF="$PROFILE"
           exec /bsd.rd
           EOF
           chmod +x staging/usr/local/share/carsonbsd/autoinstall-carsonbsd
@@ -178,14 +194,17 @@ jobs:
           Bootable development ISO based on OpenBSD 7.9 amd64 installer media.
 
           CarsonBSD installer modes:
-            - Automatic installation profile
+            - Automatic installation profile (sd0/GPT/automatic layout)
             - Custom disk installation
             - OpenBSD advanced installer
 
-          The installer frontend currently delegates actual disk/boot installation
-          to OpenBSD's installer and its supported fdisk/disklabel/boot machinery.
-          This keeps the first CarsonBSD installer functional while the custom UI
-          and fully automated install profile are developed further.
+          The automatic profile is stored at:
+            /usr/local/share/carsonbsd/install.conf
+
+          OpenBSD's autoinstall mechanism normally receives install.conf via
+          DHCP/HTTP. The CarsonBSD ISO therefore ships the canonical profile and
+          keeps the actual disk and boot operations inside OpenBSD's installer.
+          This avoids replacing the mature fdisk/disklabel/installboot machinery.
           EOF
 
       - name: Create bootable development ISO

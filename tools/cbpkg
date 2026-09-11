@@ -1,0 +1,64 @@
+#!/bin/sh
+# CarsonBSD package manager
+# Thin user-facing frontend over the OpenBSD package system.
+set -eu
+
+PKG_PATH="${PKG_PATH:-https://cdn.openbsd.org/pub/OpenBSD/7.9/packages/amd64/}"
+export PKG_PATH
+
+usage() {
+    cat <<'EOF'
+Usage: cbpkg <command> [package ...]
+
+Commands:
+  install, add    Install package(s)
+  remove, delete  Remove package(s)
+  update          Update installed package(s), or all if none specified
+  search          Search available packages
+  info            Show package information
+  list            List installed packages
+  check           Check installed package dependencies/files
+  help            Show this help
+EOF
+}
+
+[ "$#" -gt 0 ] || { usage; exit 1; }
+
+command="$1"
+shift
+
+case "$command" in
+    install|add)
+        [ "$#" -gt 0 ] || { echo "cbpkg: install requires a package name" >&2; exit 2; }
+        exec pkg_add "$@"
+        ;;
+    remove|delete)
+        [ "$#" -gt 0 ] || { echo "cbpkg: remove requires a package name" >&2; exit 2; }
+        exec pkg_delete "$@"
+        ;;
+    update|upgrade)
+        exec pkg_add -u "$@"
+        ;;
+    search)
+        [ "$#" -gt 0 ] || { echo "cbpkg: search requires a query" >&2; exit 2; }
+        exec pkg_info -Q "$@"
+        ;;
+    info)
+        [ "$#" -gt 0 ] || { echo "cbpkg: info requires a package name" >&2; exit 2; }
+        exec pkg_info "$@"
+        ;;
+    list|installed)
+        exec pkg_info
+        ;;
+    check)
+        exec pkg_check "$@"
+        ;;
+    help|-h|--help)
+        usage
+        ;;
+    *)
+        echo "cbpkg: unknown command: $command" >&2
+        usage >&2
+        exit 2
+        ;;
+esac

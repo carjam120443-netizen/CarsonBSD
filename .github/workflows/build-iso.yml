@@ -12,6 +12,11 @@ env:
   OPENBSD_VERSION: "7.9"
   OPENBSD_ARCH: "amd64"
   OPENBSD_ISO: "install79.iso"
+  OPENBSD_PKG_URL: "https://cdn.openbsd.org/pub/OpenBSD/7.9/packages/amd64/"
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   build-iso:
@@ -33,42 +38,101 @@ jobs:
             "https://cdn.openbsd.org/pub/OpenBSD/${OPENBSD_VERSION}/${OPENBSD_ARCH}/${OPENBSD_ISO}" \
             -o "downloads/${OPENBSD_ISO}"
 
-      - name: Stage CarsonBSD files
+      - name: Stage CarsonBSD base, cbpkg, desktop shortcut, and installer
         run: |
           set -eux
           rm -rf staging
-          mkdir -p staging/etc staging/usr/local/sbin staging/artwork/logo
+          mkdir -p \
+            staging/etc \
+            staging/usr/local/sbin \
+            staging/usr/local/bin \
+            staging/usr/local/share/carsonbsd \
+            staging/usr/local/share/applications \
+            staging/artwork/logo
+
           cp -a base/etc/. staging/etc/
           cp -a base/usr/. staging/usr/
           cp -a artwork/logo/carsonbsd.svg staging/artwork/logo/
           cp README.md staging/README.md
-          cat > staging/ISO-INFO.txt <<'EOF'
-          CarsonBSD 0.1-dev
 
-          Bootable development ISO based on the OpenBSD 7.9 amd64 installer media.
-          CarsonBSD project files are included as a development payload.
+          cat > staging/usr/local/sbin/cbpkg <<'EOF'
+          #!/bin/sh
+          # CarsonBSD package frontend. Initially delegates to OpenBSD pkg_add.
+          set -eu
 
-          Desktop targets:
-            - XFCE: lightweight full desktop environment
-            - cwm: minimal OpenBSD-native window manager
+          PKG_PATH="${PKG_PATH:-https://cdn.openbsd.org/pub/OpenBSD/7.9/packages/amd64/}"
+          export PKG_PATH
 
-          The installer workflow below installs both desktop targets from the
-          OpenBSD package repositories when building the CarsonBSD development
-          environment.
+          usage() {
+            echo "Usage: cbpkg {add|install|delete|remove|update|info|search} ..."
+            echo ""
+            echo "CarsonBSD package manager frontend"
+            echo "Backend: OpenBSD pkg_add/pkg_delete/pkg_info/pkg_add -u"
+          }
 
-          This is not yet a standalone CarsonBSD operating-system installer.
-          The next stage is integrating the CarsonBSD base system into the
-          OpenBSD build and installation process.
+          [ "$#" -gt 0 ] || { usage; exit 1; }
+
+          case "$1" in
+            add|install)
+              shift
+              exec pkg_add "$@"
+              ;;
+            delete|remove)
+              shift
+              exec pkg_delete "$@"
+              ;;
+            update)
+              shift
+              exec pkg_add -u "$@"
+              ;;
+            info)
+              shift
+              exec pkg_info "$@"
+              ;;
+            search)
+              shift
+              exec pkg_info -Q "$@"
+              ;;
+            *)
+              usage
+              exit 2
+              ;;
+          esac
+          EOF
+          chmod +x staging/usr/local/sbin/cbpkg
+
+          cat > staging/usr/local/bin/carsonbsd-installer <<'EOF'
+          #!/bin/sh
+          # CarsonBSD graphical installer launcher.
+          # Calamares is intentionally optional until an OpenBSD-compatible
+          # Calamares build is available; the OpenBSD installer remains the
+          # supported installation path for this development ISO.
+          if command -v calamares >/dev/null 2>&1; then
+            exec calamares "$@"
+          fi
+          echo "CarsonBSD Installer"
+          echo ""
+          echo "Calamares is not currently provided by the OpenBSD 7.9 package repository."
+          echo "Use the OpenBSD installer to install this development snapshot."
+          exit 0
+          EOF
+          chmod +x staging/usr/local/bin/carsonbsd-installer
+
+          cat > staging/usr/local/share/applications/carsonbsd-installer.desktop <<'EOF'
+          [Desktop Entry]
+          Version=1.0
+          Type=Application
+          Name=CarsonBSD Installer
+          Comment=Install CarsonBSD
+          Exec=carsonbsd-installer
+          Icon=carsonbsd
+          Terminal=true
+          Categories=System;Settings;
           EOF
 
-      - name: Install XFCE and cwm from OpenBSD package repositories
-        run: |
-          set -eux
-          mkdir -p staging/usr/local/share/carsonbsd
           cat > staging/usr/local/share/carsonbsd/install-desktop.sh <<'EOF'
           #!/bin/sh
-          # Install CarsonBSD's initial desktop targets on a running OpenBSD-based system.
-          # OpenBSD's pkg_add resolves and installs dependencies from the configured repository.
+          # Install CarsonBSD's initial desktop targets on a running OpenBSD system.
           set -eu
 
           if [ "$(id -u)" -ne 0 ]; then
@@ -77,15 +141,31 @@ jobs:
           fi
 
           export PKG_PATH="${PKG_PATH:-https://cdn.openbsd.org/pub/OpenBSD/7.9/packages/amd64/}"
-
           echo "Installing XFCE and cwm from the OpenBSD 7.9 package repository..."
           pkg_add xfce cwm
-
           echo "Desktop packages installed."
-          echo "XFCE: start with startxfce4 from an X session."
-          echo "cwm: select cwm as your window manager/session."
           EOF
           chmod +x staging/usr/local/share/carsonbsd/install-desktop.sh
+
+          cat > staging/ISO-INFO.txt <<'EOF'
+          CarsonBSD 0.1-dev
+
+          Bootable development ISO based on the OpenBSD 7.9 amd64 installer media.
+
+          Included CarsonBSD components:
+            - XFCE desktop installation target
+            - cwm minimal window-manager target
+            - cbpkg package-manager frontend
+            - CarsonBSD Installer desktop launcher
+            - CarsonBSD logo and base metadata
+
+          Calamares:
+            A launcher/configuration point is included, but Calamares is not
+            falsely bundled as an OpenBSD package because it is not currently
+            available in the official OpenBSD 7.9 amd64 package repository.
+
+          This remains a development ISO, not yet a standalone CarsonBSD installer.
+          EOF
 
       - name: Create bootable development ISO
         run: |

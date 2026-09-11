@@ -171,19 +171,26 @@ jobs:
             -outdev dist/carsonbsd-0.1-dev.iso \
             -volid CARSONBSD_DEV \
             -map staging/ /CARSONBSD/ \
-            -boot_image any replay
+            -boot_image any keep
 
       - name: Verify ISO boot structure
         run: |
           set -eux
+          REPORT="$(mktemp)"
           /usr/local/bin/xorriso \
             -indev dist/carsonbsd-0.1-dev.iso \
-            -report_el_torito plain \
-            -find / -name cdboot -print \
-            -find /CARSONBSD -maxdepth 2 -print
+            -report_el_torito plain 2>&1 | tee "$REPORT"
+          grep -q 'El Torito catalog' "$REPORT"
+          grep -q 'El Torito boot img :   1 BIOS' "$REPORT"
+          grep -q 'El Torito boot img :   2 UEFI' "$REPORT"
+          grep -q 'El Torito boot img :   1 BIOS.*cdbr' "$REPORT"
+          grep -q 'El Torito boot img :   2 UEFI.*eficdboot' "$REPORT"
           /usr/local/bin/xorriso \
             -indev dist/carsonbsd-0.1-dev.iso \
-            -find / -name cdboot -print 2>&1 | grep -E '/cdboot$|/cdboot;'
+            -ls /7.9/amd64
+          /usr/local/bin/xorriso \
+            -indev dist/carsonbsd-0.1-dev.iso \
+            -ls /CARSONBSD
 
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4

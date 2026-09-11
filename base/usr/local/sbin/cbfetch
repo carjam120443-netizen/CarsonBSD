@@ -1,0 +1,12 @@
+#!/bin/sh
+
+printf '%s\n' '        ________'
+printf '%s\n' '      /  Carson  \\    CarsonBSD'
+printf '%s\n' '     /   BSD      \\  ----------------'
+printf '%s\n' '    <   security   >  OpenBSD-based'
+printf '%s\n' '     \\ portability /   0.1-dev'
+printf '%s\n' '      \\__________/'
+printf '\n'
+printf 'Kernel/base: OpenBSD-derived\n'
+printf 'Release: '
+[ -r /etc/carsonbsd-release ] && cat /etc/carsonbsd-release || printf '%s\n' 'unknown'

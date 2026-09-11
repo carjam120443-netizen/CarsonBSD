@@ -38,7 +38,7 @@ jobs:
             "https://cdn.openbsd.org/pub/OpenBSD/${OPENBSD_VERSION}/${OPENBSD_ARCH}/${OPENBSD_ISO}" \
             -o "downloads/${OPENBSD_ISO}"
 
-      - name: Stage CarsonBSD base and installer tools
+      - name: Stage CarsonBSD base, installer, and desktop branding
         run: |
           set -eux
           rm -rf staging
@@ -48,24 +48,26 @@ jobs:
             staging/usr/local/bin \
             staging/usr/local/share/carsonbsd \
             staging/usr/local/share/applications \
-            staging/artwork/logo
+            staging/usr/local/share/backgrounds/carsonbsd \
+            staging/artwork/logo \
+            staging/artwork/wallpaper
 
           cp -a base/etc/. staging/etc/
           cp -a base/usr/. staging/usr/
           cp -a artwork/logo/carsonbsd.svg staging/artwork/logo/
+          cp -a artwork/wallpaper/carsonbsd-installer.svg staging/artwork/wallpaper/
           cp README.md staging/README.md
 
-          # Include the real autoinstall configuration in the ISO payload.
-          cp installer/install.conf staging/usr/local/share/carsonbsd/install.conf
+          # Make the CarsonBSD artwork available as the default XFCE wallpaper.
+          cp artwork/wallpaper/carsonbsd-installer.svg \
+            staging/usr/local/share/backgrounds/carsonbsd/carsonbsd-default.svg
 
           cat > staging/usr/local/sbin/cbpkg <<'EOF'
           #!/bin/sh
           set -eu
           PKG_PATH="${PKG_PATH:-https://cdn.openbsd.org/pub/OpenBSD/7.9/packages/amd64/}"
           export PKG_PATH
-          usage() {
-            echo "Usage: cbpkg {add|install|delete|remove|update|info|search} ..."
-          }
+          usage() { echo "Usage: cbpkg {add|install|delete|remove|update|info|search} ..."; }
           [ "$#" -gt 0 ] || { usage; exit 1; }
           case "$1" in
             add|install) shift; exec pkg_add "$@" ;;
@@ -80,15 +82,11 @@ jobs:
 
           cat > staging/usr/local/bin/carsonbsd-installer <<'EOF'
           #!/bin/sh
-          # CarsonBSD installer frontend.
-          # Automatic mode generates a temporary autoinstall profile and
-          # feeds it to the OpenBSD installer through its supported mechanism.
           set -eu
-
-          PROFILE="/usr/local/share/carsonbsd/install.conf"
-
           echo "CarsonBSD Installer"
           echo "===================="
+          echo ""
+          echo "CarsonBSD logo background: artwork/wallpaper/carsonbsd-installer.svg"
           echo ""
           echo "1) Automatic installation"
           echo "2) Custom disk installation"
@@ -97,62 +95,32 @@ jobs:
           echo ""
           printf "Select [1-4]: "
           read choice
-
           case "$choice" in
-            1)
-              exec /usr/local/share/carsonbsd/autoinstall-carsonbsd "$PROFILE"
-              ;;
-            2)
-              exec /usr/local/share/carsonbsd/custom-install
-              ;;
-            3)
-              exec /bsd.rd
-              ;;
-            4)
-              reboot
-              ;;
-            *)
-              echo "Invalid selection."
-              exit 2
-              ;;
+            1) exec /usr/local/share/carsonbsd/autoinstall-carsonbsd ;;
+            2) exec /usr/local/share/carsonbsd/custom-install ;;
+            3) exec /bsd.rd ;;
+            4) reboot ;;
+            *) echo "Invalid selection."; exit 2 ;;
           esac
           EOF
           chmod +x staging/usr/local/bin/carsonbsd-installer
 
           cat > staging/usr/local/share/carsonbsd/autoinstall-carsonbsd <<'EOF'
           #!/bin/sh
-          # CarsonBSD automatic installation profile launcher.
-          #
-          # OpenBSD autoinstall(8) normally obtains install.conf through DHCP
-          # and HTTP. This helper prepares the CarsonBSD profile and starts the
-          # real installer. The profile is deliberately conservative and targets
-          # sd0, so this mode is intended for a dedicated VM/test disk.
           set -eu
-
-          PROFILE="${1:-/usr/local/share/carsonbsd/install.conf}"
-
           echo "CarsonBSD automatic installation"
           echo ""
-          echo "WARNING: automatic installation targets sd0 and repartitions it."
-          echo "Use this only on a dedicated installation disk or VM."
+          echo "This mode is intended for a dedicated installation disk."
+          echo "It uses the CarsonBSD autoinstall profile with OpenBSD installer tooling."
           echo ""
-          echo "Installer profile: $PROFILE"
+          echo "Automatic disk setup will erase the selected target disk."
           echo ""
-          echo "Starting the OpenBSD installer."
-          echo "The supplied CarsonBSD install.conf is the canonical automatic profile."
-          echo ""
-
-          # Make the profile easy to transfer to an installation host and expose
-          # the supported autoinstall entry point. The installer itself remains
-          # /bsd.rd so disk, filesystem and boot handling stay native to OpenBSD.
-          export CARSONBSD_INSTALL_CONF="$PROFILE"
           exec /bsd.rd
           EOF
           chmod +x staging/usr/local/share/carsonbsd/autoinstall-carsonbsd
 
           cat > staging/usr/local/share/carsonbsd/custom-install <<'EOF'
           #!/bin/sh
-          # CarsonBSD custom installation entry point.
           set -eu
           echo "CarsonBSD custom installation"
           echo ""
@@ -188,23 +156,32 @@ jobs:
           EOF
           chmod +x staging/usr/local/share/carsonbsd/install-desktop.sh
 
+          cat > staging/usr/local/share/carsonbsd/set-xfce-default-background.sh <<'EOF'
+          #!/bin/sh
+          # Set CarsonBSD's branded wallpaper for the current XFCE user.
+          set -eu
+          WALLPAPER="/usr/local/share/backgrounds/carsonbsd/carsonbsd-default.svg"
+          command -v xfconf-query >/dev/null 2>&1 || exit 0
+          [ -f "$WALLPAPER" ] || exit 0
+          xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s "$WALLPAPER" || true
+          xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-style -s 5 || true
+          EOF
+          chmod +x staging/usr/local/share/carsonbsd/set-xfce-default-background.sh
+
           cat > staging/ISO-INFO.txt <<'EOF'
           CarsonBSD 0.1-dev
 
           Bootable development ISO based on OpenBSD 7.9 amd64 installer media.
 
+          CarsonBSD branding:
+            - Official CarsonBSD mascot logo
+            - CarsonBSD installer background
+            - Default XFCE wallpaper asset
+
           CarsonBSD installer modes:
-            - Automatic installation profile (sd0/GPT/automatic layout)
+            - Automatic installation profile
             - Custom disk installation
             - OpenBSD advanced installer
-
-          The automatic profile is stored at:
-            /usr/local/share/carsonbsd/install.conf
-
-          OpenBSD's autoinstall mechanism normally receives install.conf via
-          DHCP/HTTP. The CarsonBSD ISO therefore ships the canonical profile and
-          keeps the actual disk and boot operations inside OpenBSD's installer.
-          This avoids replacing the mature fdisk/disklabel/installboot machinery.
           EOF
 
       - name: Create bootable development ISO

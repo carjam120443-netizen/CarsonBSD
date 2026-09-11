@@ -6,8 +6,8 @@
   <!-- Original CarsonBSD mascot mark -->
   <g transform="translate(34 28)">
     <!-- horns -->
-    <path d="M92 92 C52 72 42 38 55 12 C82 28 104 50 112 79 Z" fill="#f2c94c" stroke="#111" stroke-width="8" stroke-linejoin="round"/>
-    <path d="M418 92 C458 72 468 38 455 12 C428 28 406 50 398 79 Z" fill="#f2c94c" stroke="#111" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M99 94 C68 76 58 43 68 18 C91 31 110 52 118 82 Z" fill="#f2c94c" stroke="#111" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M411 94 C442 76 452 43 442 18 C419 31 400 52 392 82 Z" fill="#f2c94c" stroke="#111" stroke-width="8" stroke-linejoin="round"/>
 
     <!-- head -->
     <path d="M82 91 C82 50 127 27 255 27 C383 27 428 50 428 91 L428 178 C428 229 371 264 255 264 C139 264 82 229 82 178 Z" fill="#111"/>

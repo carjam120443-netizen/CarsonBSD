@@ -78,23 +78,9 @@ jobs:
           Source page: https://commons.wikimedia.org/wiki/File:Computer_icon_cc0.svg
           EOF
 
-          cat > staging/usr/local/sbin/cbpkg <<'EOF'
-          #!/bin/sh
-          set -eu
-          PKG_PATH="${PKG_PATH:-https://cdn.openbsd.org/pub/OpenBSD/7.9/packages/amd64/}"
-          export PKG_PATH
-          usage() { echo "Usage: cbpkg {add|install|delete|remove|update|info|search} ..."; }
-          [ "$#" -gt 0 ] || { usage; exit 1; }
-          case "$1" in
-            add|install) shift; exec pkg_add "$@" ;;
-            delete|remove) shift; exec pkg_delete "$@" ;;
-            update) shift; exec pkg_add -u "$@" ;;
-            info) shift; exec pkg_info "$@" ;;
-            search) shift; exec pkg_info -Q "$@" ;;
-            *) usage; exit 2 ;;
-          esac
-          EOF
-          chmod +x staging/usr/local/sbin/cbpkg
+          # The repository copy is the single source of truth for cbpkg.
+          install -m 755 tools/cbpkg staging/usr/local/bin/cbpkg
+          ln -sf /usr/local/bin/cbpkg staging/usr/local/sbin/cbpkg
 
           cat > staging/usr/local/bin/carsonbsd-installer <<'EOF'
           #!/bin/sh
@@ -188,8 +174,10 @@ jobs:
             /usr/local/share/applications/carsonbsd-installer.desktop
           install -m 644 /CARSONBSD/etc/skel/Desktop/carsonbsd-installer.desktop \
             /etc/skel/Desktop/carsonbsd-installer.desktop
+          install -m 755 /CARSONBSD/usr/local/bin/cbpkg /usr/local/bin/cbpkg
+          ln -sf /usr/local/bin/cbpkg /usr/local/sbin/cbpkg
 
-          echo "Desktop packages and CarsonBSD installer launcher installed."
+          echo "Desktop packages, CarsonBSD installer launcher, and cbpkg installed."
           echo ""
           echo "For an existing user, copy /etc/skel/Desktop/carsonbsd-installer.desktop"
           echo "to that user's Desktop if the launcher is not already present."
@@ -223,6 +211,11 @@ jobs:
             - Wikimedia Commons: Computer icon cc0.svg
             - Author: Markus Suhr
             - License: CC0 1.0 Universal Public Domain Dedication
+
+          CarsonBSD package manager:
+            - cbpkg, sourced from tools/cbpkg
+            - Uses the OpenBSD binary package system underneath
+            - Default repository: OpenBSD 7.9 amd64 packages
 
           CarsonBSD installer modes:
             - Automatic installation profile

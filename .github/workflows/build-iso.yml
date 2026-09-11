@@ -28,7 +28,20 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install ISO tools
-        run: sudo apt-get update && sudo apt-get install -y xorriso
+        run: |
+          set -eux
+          sudo apt-get update
+          sudo apt-get install -y build-essential curl xz-utils
+          curl -fL --retry 3 \
+            "https://ftp.gnu.org/gnu/xorriso/xorriso-1.5.8.pl02.tar.gz" \
+            -o /tmp/xorriso.tar.gz
+          tar -xzf /tmp/xorriso.tar.gz -C /tmp
+          cd /tmp/xorriso-1.5.8.pl02
+          ./configure --prefix=/usr/local
+          make -j"$(nproc)"
+          sudo make install
+          hash -r
+          /usr/local/bin/xorriso -version
 
       - name: Download OpenBSD installer base
         run: |
@@ -153,12 +166,24 @@ jobs:
         run: |
           set -eux
           rm -f dist/carsonbsd-0.1-dev.iso
-          xorriso \
+          /usr/local/bin/xorriso \
             -indev "downloads/${OPENBSD_ISO}" \
             -outdev dist/carsonbsd-0.1-dev.iso \
             -volid CARSONBSD_DEV \
             -map staging/ /CARSONBSD/ \
-            -boot_image any keep
+            -boot_image any replay
+
+      - name: Verify ISO boot structure
+        run: |
+          set -eux
+          /usr/local/bin/xorriso \
+            -indev dist/carsonbsd-0.1-dev.iso \
+            -report_el_torito plain \
+            -find / -name cdboot -print \
+            -find /CARSONBSD -maxdepth 2 -print
+          /usr/local/bin/xorriso \
+            -indev dist/carsonbsd-0.1-dev.iso \
+            -find / -name cdboot -print 2>&1 | grep -E '/cdboot$|/cdboot;' 
 
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4

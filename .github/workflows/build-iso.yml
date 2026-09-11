@@ -36,7 +36,7 @@ jobs:
             "https://ftp.gnu.org/gnu/xorriso/xorriso-1.5.8.pl02.tar.gz" \
             -o /tmp/xorriso.tar.gz
           tar -xzf /tmp/xorriso.tar.gz -C /tmp
-          cd /tmp/xorriso-1.5.8.pl02
+          cd /tmp/xorriso-1.5.8
           ./configure --prefix=/usr/local
           make -j"$(nproc)"
           sudo make install
@@ -183,7 +183,7 @@ jobs:
             -find /CARSONBSD -maxdepth 2 -print
           /usr/local/bin/xorriso \
             -indev dist/carsonbsd-0.1-dev.iso \
-            -find / -name cdboot -print 2>&1 | grep -E '/cdboot$|/cdboot;' 
+            -find / -name cdboot -print 2>&1 | grep -E '/cdboot$|/cdboot;'
 
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4

@@ -1,12 +1,33 @@
 #!/bin/sh
 
-printf '%s\n' '        ________'
-printf '%s\n' '      /  Carson  \\    CarsonBSD'
-printf '%s\n' '     /   BSD      \\  ----------------'
-printf '%s\n' '    <   security   >  OpenBSD-based'
-printf '%s\n' '     \\ portability /   0.1-dev'
-printf '%s\n' '      \\__________/'
+# CarsonBSD fetch logo and system information.
+printf '%s\n' '           /\\        /\\'
+printf '%s\n' '          /  \\______/  \\'
+printf '%s\n' '         /             \\'
+printf '%s\n' '        |   o       o   |'
+printf '%s\n' '        |      ___      |'
+printf '%s\n' '        |    \\_____/    |'
+printf '%s\n' '         \\     ^     /'
+printf '%s\n' '          \\_________/'
+printf '%s\n' '            |  |  |'
+printf '%s\n' '            |__|__|     CarsonBSD'
+printf '%s\n' '                         ---------------'
+printf '%s\n' '                         Security • Simplicity'
+printf '%s\n' '                         Portability • BSD'
 printf '\n'
-printf 'Kernel/base: OpenBSD-derived\n'
-printf 'Release: '
+printf 'OS:       '
+[ -r /etc/os-release ] && . /etc/os-release && printf '%s\n' "${PRETTY_NAME:-CarsonBSD}" || printf '%s\n' 'CarsonBSD'
+printf 'Release:  '
 [ -r /etc/carsonbsd-release ] && cat /etc/carsonbsd-release || printf '%s\n' 'unknown'
+printf 'Kernel:   '
+uname -srm
+printf 'Packages: '
+if command -v pkg_info >/dev/null 2>&1; then
+    pkg_info 2>/dev/null | wc -l | tr -d ' '
+    printf '\n'
+else
+    printf '%s\n' 'unknown'
+fi
+printf 'Shell:    %s\n' "${SHELL:-unknown}"
+printf 'Hostname: %s\n' "$(hostname 2>/dev/null || printf '%s' unknown)"
+printf '\n'

@@ -183,8 +183,8 @@ jobs:
           grep -q 'El Torito catalog' "$REPORT"
           grep -q 'El Torito boot img :   1 BIOS' "$REPORT"
           grep -q 'El Torito boot img :   2 UEFI' "$REPORT"
-          grep -q 'El Torito boot img :   1 BIOS.*cdbr' "$REPORT"
-          grep -q 'El Torito boot img :   2 UEFI.*eficdboot' "$REPORT"
+          grep -q 'El Torito img path :   1 /7.9/amd64/cdbr' "$REPORT"
+          grep -q 'El Torito img path :   2 /7.9/amd64/eficdboot' "$REPORT"
           /usr/local/bin/xorriso \
             -indev dist/carsonbsd-0.1-dev.iso \
             -ls /7.9/amd64

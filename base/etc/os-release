@@ -1,0 +1,8 @@
+NAME="CarsonBSD"
+PRETTY_NAME="CarsonBSD (OpenBSD-based)"
+ID=carsonbsd
+ID_LIKE=openbsd
+VERSION_ID="0.1-dev"
+VERSION="0.1 Development"
+HOME_URL="https://github.com/carjam120443-netizen/CarsonBSD"
+BUG_REPORT_URL="https://github.com/carjam120443-netizen/CarsonBSD/issues"

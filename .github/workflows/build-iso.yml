@@ -48,10 +48,44 @@ jobs:
           Bootable development ISO based on the OpenBSD 7.9 amd64 installer media.
           CarsonBSD project files are included as a development payload.
 
+          Desktop targets:
+            - XFCE: lightweight full desktop environment
+            - cwm: minimal OpenBSD-native window manager
+
+          The installer workflow below installs both desktop targets from the
+          OpenBSD package repositories when building the CarsonBSD development
+          environment.
+
           This is not yet a standalone CarsonBSD operating-system installer.
           The next stage is integrating the CarsonBSD base system into the
           OpenBSD build and installation process.
           EOF
+
+      - name: Install XFCE and cwm from OpenBSD package repositories
+        run: |
+          set -eux
+          mkdir -p staging/usr/local/share/carsonbsd
+          cat > staging/usr/local/share/carsonbsd/install-desktop.sh <<'EOF'
+          #!/bin/sh
+          # Install CarsonBSD's initial desktop targets on a running OpenBSD-based system.
+          # OpenBSD's pkg_add resolves and installs dependencies from the configured repository.
+          set -eu
+
+          if [ "$(id -u)" -ne 0 ]; then
+            echo "install-desktop.sh must be run as root." >&2
+            exit 1
+          fi
+
+          export PKG_PATH="${PKG_PATH:-https://cdn.openbsd.org/pub/OpenBSD/7.9/packages/amd64/}"
+
+          echo "Installing XFCE and cwm from the OpenBSD 7.9 package repository..."
+          pkg_add xfce cwm
+
+          echo "Desktop packages installed."
+          echo "XFCE: start with startxfce4 from an X session."
+          echo "cwm: select cwm as your window manager/session."
+          EOF
+          chmod +x staging/usr/local/share/carsonbsd/install-desktop.sh
 
       - name: Create bootable development ISO
         run: |

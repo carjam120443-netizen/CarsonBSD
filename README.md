@@ -1,5 +1,13 @@
 # CarsonBSD 🐡
 
+<p align="center">
+  <img src="artwork/logo/carsonbsd.svg" alt="CarsonBSD logo" width="180">
+</p>
+
+<p align="center">
+  <strong>Security • Simplicity • Portability • BSD</strong>
+</p>
+
 **CarsonBSD is an OpenBSD-based operating system project with a focus on security, simplicity, portability, and a distinctly CarsonBSD user experience.**
 
 > 🚧 **Early development:** CarsonBSD is currently a project skeleton. The build system, base system integration, installer, packages, and desktop environments will be developed incrementally.
@@ -41,8 +49,8 @@ The initial development workflow will target virtual machines first, making it p
 
 ### Initial milestones
 
-- [ ] Establish the repository structure
-- [ ] Create the CarsonBSD build environment
+- [x] Establish the repository structure
+- [x] Create the CarsonBSD build-system entry point
 - [ ] Produce a reproducible bootable image
 - [ ] Add CarsonBSD system configuration
 - [ ] Add `cbfetch`

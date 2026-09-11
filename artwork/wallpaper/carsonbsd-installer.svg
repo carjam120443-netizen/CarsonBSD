@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">CarsonBSD Installer Background</title>
+  <desc id="desc">CarsonBSD installer wallpaper featuring the official CarsonBSD mascot logo.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#111"/>
+      <stop offset="1" stop-color="#252525"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <circle cx="960" cy="510" r="390" fill="#f2c94c" opacity="0.08"/>
+  <g transform="translate(660 250) scale(0.94)">
+    <path d="M99 94 C68 76 58 43 68 18 C91 31 110 52 118 82 Z" fill="#f2c94c" stroke="#fff" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M411 94 C442 76 452 43 442 18 C419 31 400 52 392 82 Z" fill="#f2c94c" stroke="#fff" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M82 91 C82 50 127 27 255 27 C383 27 428 50 428 91 L428 178 C428 229 371 264 255 264 C139 264 82 229 82 178 Z" fill="#111"/>
+    <path d="M119 115 C145 84 188 74 255 74 C322 74 365 84 391 115 L378 191 C354 220 309 236 255 236 C201 236 156 220 132 191 Z" fill="#fff"/>
+    <circle cx="190" cy="145" r="15" fill="#111"/><circle cx="320" cy="145" r="15" fill="#111"/>
+    <circle cx="186" cy="141" r="4" fill="#f2c94c"/><circle cx="316" cy="141" r="4" fill="#f2c94c"/>
+    <path d="M237 164 Q255 151 273 164 L255 180 Z" fill="#111"/>
+    <path d="M205 190 Q255 224 305 190" fill="none" stroke="#111" stroke-width="8" stroke-linecap="round"/>
+    <path d="M214 211 Q255 225 296 211 L286 239 Q255 249 224 239 Z" fill="#f2c94c"/>
+  </g>
+  <text x="960" y="650" text-anchor="middle" fill="#fff" font-family="DejaVu Sans, Arial, sans-serif" font-size="82" font-weight="700" letter-spacing="3">CarsonBSD</text>
+  <text x="960" y="720" text-anchor="middle" fill="#f2c94c" font-family="DejaVu Sans, Arial, sans-serif" font-size="30" letter-spacing="6">SECURITY • SIMPLICITY • PORTABILITY • BSD</text>
+</svg>

@@ -44,11 +44,13 @@ jobs:
           rm -rf staging
           mkdir -p \
             staging/etc \
+            staging/etc/skel/Desktop \
             staging/usr/local/sbin \
             staging/usr/local/bin \
             staging/usr/local/share/carsonbsd \
             staging/usr/local/share/applications \
             staging/usr/local/share/backgrounds/carsonbsd \
+            staging/usr/local/share/icons/hicolor/scalable/apps \
             staging/artwork/logo \
             staging/artwork/wallpaper
 
@@ -61,6 +63,20 @@ jobs:
           # Make the CarsonBSD artwork available as the default XFCE wallpaper.
           cp artwork/wallpaper/carsonbsd-installer.svg \
             staging/usr/local/share/backgrounds/carsonbsd/carsonbsd-default.svg
+
+          # Use a clean CC0 desktop-computer SVG from Wikimedia Commons for the installer icon.
+          curl -fL --retry 3 \
+            "https://upload.wikimedia.org/wikipedia/commons/c/ce/Computer_icon_cc0.svg" \
+            -o staging/usr/local/share/icons/hicolor/scalable/apps/carsonbsd-installer.svg
+
+          cat > staging/usr/local/share/carsonbsd/ICON-LICENSE.txt <<'EOF'
+          CarsonBSD Installer icon
+
+          Source: Wikimedia Commons - Computer icon cc0.svg
+          Author: Markus Suhr
+          License: CC0 1.0 Universal Public Domain Dedication
+          Source page: https://commons.wikimedia.org/wiki/File:Computer_icon_cc0.svg
+          EOF
 
           cat > staging/usr/local/sbin/cbpkg <<'EOF'
           #!/bin/sh
@@ -138,9 +154,15 @@ jobs:
           Name=CarsonBSD Installer
           Comment=Install CarsonBSD
           Exec=carsonbsd-installer
+          Icon=carsonbsd-installer
           Terminal=true
           Categories=System;Settings;
           EOF
+
+          # Put a clickable installer launcher on the default XFCE desktop for new users.
+          cp staging/usr/local/share/applications/carsonbsd-installer.desktop \
+            staging/etc/skel/Desktop/carsonbsd-installer.desktop
+          chmod 644 staging/etc/skel/Desktop/carsonbsd-installer.desktop
 
           cat > staging/usr/local/share/carsonbsd/install-desktop.sh <<'EOF'
           #!/bin/sh
@@ -152,7 +174,25 @@ jobs:
           export PKG_PATH="${PKG_PATH:-https://cdn.openbsd.org/pub/OpenBSD/7.9/packages/amd64/}"
           echo "Installing XFCE and cwm..."
           pkg_add xfce cwm
-          echo "Desktop packages installed."
+
+          # Install CarsonBSD branding and the installer launcher into the system.
+          install -d /usr/local/share/backgrounds/carsonbsd
+          install -d /usr/local/share/icons/hicolor/scalable/apps
+          install -d /usr/local/share/applications
+          install -d /etc/skel/Desktop
+          install -m 644 /CARSONBSD/usr/local/share/backgrounds/carsonbsd/carsonbsd-default.svg \
+            /usr/local/share/backgrounds/carsonbsd/carsonbsd-default.svg
+          install -m 644 /CARSONBSD/usr/local/share/icons/hicolor/scalable/apps/carsonbsd-installer.svg \
+            /usr/local/share/icons/hicolor/scalable/apps/carsonbsd-installer.svg
+          install -m 644 /CARSONBSD/usr/local/share/applications/carsonbsd-installer.desktop \
+            /usr/local/share/applications/carsonbsd-installer.desktop
+          install -m 644 /CARSONBSD/etc/skel/Desktop/carsonbsd-installer.desktop \
+            /etc/skel/Desktop/carsonbsd-installer.desktop
+
+          echo "Desktop packages and CarsonBSD installer launcher installed."
+          echo ""
+          echo "For an existing user, copy /etc/skel/Desktop/carsonbsd-installer.desktop"
+          echo "to that user's Desktop if the launcher is not already present."
           EOF
           chmod +x staging/usr/local/share/carsonbsd/install-desktop.sh
 
@@ -177,6 +217,12 @@ jobs:
             - Official CarsonBSD mascot logo
             - CarsonBSD installer background
             - Default XFCE wallpaper asset
+            - CarsonBSD Installer desktop shortcut and icon
+
+          Installer icon source:
+            - Wikimedia Commons: Computer icon cc0.svg
+            - Author: Markus Suhr
+            - License: CC0 1.0 Universal Public Domain Dedication
 
           CarsonBSD installer modes:
             - Automatic installation profile
